@@ -1,0 +1,19 @@
+--Info about the current session
+
+SELECT des.text_size ,
+des.language ,
+des.date_format ,
+des.date_first ,
+des.quoted_identifier ,
+des.arithabort ,
+des.ansi_null_dflt_on ,
+des.ansi_defaults ,
+des.ansi_warnings ,
+des.ansi_padding ,
+des.ansi_nulls ,
+des.concat_null_yields_null ,
+des.transaction_isolation_level ,
+des.lock_timeout ,
+des.deadlock_priority
+FROM sys.dm_exec_sessions des
+WHERE des.session_id = @@SPID
