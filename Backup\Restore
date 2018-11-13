@@ -1,0 +1,27 @@
+-- Script shows information about the backup history of databases. Uses msdb system table. Can be run only for one or all databases.
+
+-- Choose a database
+use master
+go
+
+-- Get Backup History for required database
+select top 100
+bckset.database_name,
+bckfam.physical_device_name,
+cast(cast(bckset.backup_size / 1000000 as int) as varchar(14)) + ' ' + 'MB' as backup_size,
+cast(datediff(second, bckset.backup_start_date,
+bckset.backup_finish_date) as varchar(4)) + ' ' + 'Seconds' time_taken,
+bckset.backup_start_date,
+cast(bckset.first_lsn as varchar(50)) as first_lsn,
+cast(bckset.last_lsn as varchar(50)) as last_lsn,
+case bckset.[type] when 'D' then 'Full'
+when 'I' then 'Differential'
+when 'L' then 'Transaction Log'
+end as backup_type,
+bckset.server_name,
+bckset.recovery_model
+from msdb.dbo.backupset as bckset
+inner join msdb.dbo.backupmediafamily bckfam on bckset.media_set_id = bckfam.media_set_id
+where bckset.database_name = db_name() -- Remove this line for all the database
+order by backup_start_date desc, backup_finish_date
+go
