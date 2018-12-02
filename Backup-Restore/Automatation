@@ -1,0 +1,53 @@
+USE [master]
+GO
+DECLARE @BackupFileLocation NVARCHAR(200) ,
+@EmailOnFailure NVARCHAR(200) ,
+@SQLBackupCommand NVARCHAR(2000) ,
+@DatabaseList NVARCHAR(2000) ,
+@ExitCode INT ,
+@ErrorCode INT ,
+@BackupType NVARCHAR(4)
+-- Conifgure Options Here
+SET @BackupFileLocation = N'\\NetworkServer\ShareName\'
++ @@SERVERNAME + '\'
+SET @EmailOnFailure = N'DBATeam@MyCompany.com'
+SET @DatabaseList = N'DatabaseForDiffBackups_SB'
+SET @BackupType = N'DIFF'
+-- Do Not Modify Below
+SET @SQLBackupCommand = CASE @BackupType
+WHEN N'FULL'
+THEN N'-SQL "BACKUP DATABASES [' + @DatabaseList
++ N'] TO DISK = ''' + @BackupFileLocation
++ N'<AUTO>.sqb'' WITH MAILTO_ONERRORONLY = '''
++ @EmailOnFailure
++ N''', DISKRETRYINTERVAL = 30,
+DISKRETRYCOUNT = 10, COMPRESSION = 3,
+THREADCOUNT = 2"'
+WHEN N'LOG'
+THEN N'-SQL "BACKUP LOGS [' + @DatabaseList
++ N'] TO DISK = ''' + @BackupFileLocation
++ N'<AUTO>.sqb'' WITH MAILTO_ONERRORONLY = '''
++ @EmailOnFailure
+
++ N''', DISKRETRYINTERVAL = 30,
+DISKRETRYCOUNT = 10, COMPRESSION = 3,
+THREADCOUNT = 2"'
+WHEN N'DIFF'
+THEN N'-SQL "BACKUP DATABASES [' + @DatabaseList
++ N'] TO DISK = ''' + @BackupFileLocation
++ N'<AUTO>.sqb'' WITH MAILTO_ONERRORONLY = '''
++ @EmailOnFailure
++ N''', DISKRETRYINTERVAL = 30,
+DISKRETRYCOUNT = 10, COMPRESSION = 3,
+THREADCOUNT = 2, DIFFERENTIAL"'
+END
+EXECUTE master..sqlbackup @SQLBackupCommand, @ExitCode OUTPUT,
+@ErrorCode OUTPUT
+-- If our backup operations return any errors or warnings execute below
+IF ( @ExitCode >= 500
+OR @ErrorCode > 0
+)
+BEGIN
+-- Raise an error to fail your backup job
+RAISERROR(N'Backup operation error', 10,1)
+END
