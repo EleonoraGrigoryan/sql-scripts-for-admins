@@ -1,0 +1,12 @@
+-- Count of dirty pages in data cache for each database
+
+select db_name(database_id) as 'Database', count(page_id) as 'Dirty Pages'
+from sys.dm_os_buffer_descriptors
+where is_modified = 1
+group by db_name(database_id)
+order by count(page_id) desc
+
+-- Useful Commands
+checkpoint --manual checkpoint
+dbcc dropcleanbuffers --flush out clean pages from the buffer. After checkpoint all pages are clean.
+--select * from sys.dm_os_waiting_tasks
